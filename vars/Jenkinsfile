@@ -1,0 +1,38 @@
+@Library('jenkins-shared-library') _
+
+pipeline {
+    agent any
+
+    parameters {
+        string(name: 'IMAGE_TAG', defaultValue: 'v2', description: 'Docker image tag to deploy')
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Helm Deploy') {
+            steps {
+                helmDeploy(
+                    releaseName: 'helm-demo',
+                    chartPath: './helm-demo-chart',
+                    imageTag: "${params.IMAGE_TAG}"
+                )
+            }
+        }
+
+        stage('Verify') {
+            steps {
+                sh '''
+                    export PATH=$PATH:/var/jenkins_home/bin
+                    kubectl get pods
+                    kubectl get svc
+                    helm list
+                '''
+            }
+        }
+    }
+}
